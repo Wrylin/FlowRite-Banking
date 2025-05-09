@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "475518325058",
+    "project_id": "flowrite-banking",
+    "storage_bucket": "flowrite-banking.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475518325058:android:83385fff09580dab9678db",
+        "android_client_info": {
+          "package_name": "com.example.flowrite_banking"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "475518325058-nhmr2jsh12epeo8iu42miabcq6e793dc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flowrite_banking",
+            "certificate_hash": "c6a87c3813713e5ccd799a46553a2fb218d0cc14"
+          }
+        },
+        {
+          "client_id": "475518325058-0l8p446fs24sk15kuquuvv561nnngstv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3vJjdjjF63Jqc5mEMulYifkoI1MRVmuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "475518325058-0l8p446fs24sk15kuquuvv561nnngstv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
