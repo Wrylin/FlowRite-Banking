@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Welcome.dart';
 import 'package:flowrite_banking/AuthService.dart';
+import 'package:flowrite_banking/pages/Userinfo.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _SettingsPageState createState() => _SettingsPageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,46 +20,39 @@ class _ProfilePageState extends State<ProfilePage> {
           Align(
             alignment: Alignment.topCenter,
             child: Padding(
-              padding: EdgeInsets.all(25),
-              child: Text(
-                "Profile",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
               padding: EdgeInsets.fromLTRB(0, 20, 0, 15),
               child: CircleAvatar(
                 radius: 100,
-                backgroundImage: AssetImage('assets/profileImage.webp'),
+                backgroundImage: AssetImage('assets/images/profile_placeholder.jpg'),
               ),
             ),
           ),
           Align(
             alignment: Alignment.topCenter,
             child: Padding(
-                padding: EdgeInsets.fromLTRB(0, 20, 0, 15),
-                child: Text(
-                  "Diana Aurellano",
-                  style: TextStyle(
-                      color: Colors.grey[500],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24),
-                )),
+              padding: EdgeInsets.fromLTRB(0, 20, 0, 10),
+              child: Text(
+                "Diana Aurellano",
+                style: TextStyle(
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24),
+              ),
+            ),
           ),
           Align(
             alignment: Alignment.topCenter,
             child: Padding(
               padding: EdgeInsets.fromLTRB(15, 25, 15, 0),
               child: Column(
-                // ignore: prefer_const_literals_to_create_immutables
                 children: [
                   ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => UserPage()),
+                      );
+                    },
                     leading: CircleAvatar(
                       backgroundColor: Color.fromARGB(255, 239, 243, 245),
                       child: Icon(
@@ -119,7 +113,8 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: EdgeInsets.all(15),
               child: ElevatedButton(
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF204887)),
+                  backgroundColor:
+                  MaterialStateProperty.all<Color>(Color(0xFF204887)),
                 ),
                 onPressed: () async {
                   await AuthService().signout();
@@ -137,6 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           )
         ],
-      ));
+      ),
+    );
   }
 }

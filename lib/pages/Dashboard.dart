@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Transfer.dart';
 import 'package:flowrite_banking/pages/Card.dart';
 import 'package:flowrite_banking/pages/Transactions.dart';
-import 'package:flowrite_banking/pages/Profile.dart';
+import 'package:flowrite_banking/pages/Settings.dart';
 
 class DashboardContent extends StatelessWidget {
   const DashboardContent({super.key});
@@ -77,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
     const CardPage(),
     const TransferPage(),
     const TransactionPage(),
-    const ProfilePage(), // Placeholder for Profile
+    const SettingsPage(), // Placeholder for Setting
   ];
 
   @override
@@ -115,7 +115,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             tabItem(Icons.history, "History", 3),
-            tabItem(Icons.person, "Profile", 4),
+            tabItem(Icons.settings, "Settings", 4),
           ],
         ),
       ),

@@ -14,12 +14,14 @@ class _SignupPageState extends State<SignupPage> {
   final usernameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final nameController = TextEditingController();
 
   @override
   void dispose() {
     usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    nameController.dispose();
     super.dispose();
   }
 
@@ -43,7 +45,7 @@ class _SignupPageState extends State<SignupPage> {
       body: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 40),
-          height: MediaQuery.of(context).size.height - 50,
+          height: MediaQuery.of(context).size.height - 90,
           width: double.infinity,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -54,8 +56,9 @@ class _SignupPageState extends State<SignupPage> {
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
+
                       )),
-                  SizedBox(height: 20,),
+                  SizedBox(height: 30),
                   Text("Create an account",
                     style: TextStyle(
                         fontSize: 15,
@@ -65,6 +68,7 @@ class _SignupPageState extends State<SignupPage> {
               ),
               Column(
                 children: <Widget>[
+                  inputFile(label: "Full Name", controller: nameController),
                   inputFile(label: "Username", controller: usernameController),
                   inputFile(label: "Email", controller: emailController),
                   inputFile(label: "Password", obscureText: true, controller: passwordController),
