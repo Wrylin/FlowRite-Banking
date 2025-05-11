@@ -114,7 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: ElevatedButton(
                 style: ButtonStyle(
                   backgroundColor:
-                  MaterialStateProperty.all<Color>(Color(0xFF204887)),
+                  WidgetStateProperty.all<Color>(Color(0xFF204887)),
                 ),
                 onPressed: () async {
                   await AuthService().signout();
