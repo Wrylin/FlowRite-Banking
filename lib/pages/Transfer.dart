@@ -114,11 +114,11 @@ class TransferPage extends StatelessWidget {
                                   backgroundImage: AssetImage("assets/person.jpeg"),
                                 ),
                                 const Text(
-                                  "Maria",
+                                  "Arnel",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const Text(
-                                  "Sevchenko",
+                                  "Victoria",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 )
                               ],

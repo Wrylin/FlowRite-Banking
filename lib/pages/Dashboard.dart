@@ -4,7 +4,6 @@ import 'package:flowrite_banking/pages/Card.dart';
 import 'package:flowrite_banking/pages/Transactions.dart';
 import 'package:flowrite_banking/pages/Profile.dart';
 
-// Create a separate widget for the dashboard content
 class DashboardContent extends StatelessWidget {
   const DashboardContent({super.key});
 
@@ -13,64 +12,50 @@ class DashboardContent extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+          // Card at the top
+          const Padding(
+            padding: EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0),
+            child: CreditCard(),
+          ),
+
+          // Welcome text below card and centered
+          const SizedBox(height: 20),
+          const Center(
+            child: Column(
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome back!",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    Text(
-                      "Diana Aurellano ",
-                      style: TextStyle(color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                IconButton.outlined(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.notifications,
+                Text(
+                  "Welcome back!",
+                  style: TextStyle(
                     color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Diana Aurellano",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold
                   ),
                 ),
               ],
             ),
           ),
+           SizedBox(height: 20),
           Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 167),
-                  color: Colors.white,
-                  child: const Column(
-                    children: [
-                      SizedBox(height: 80),
-                      //   ActionButtons
-                      // ActionButtons(),
-                      SizedBox(height: 30),
-                      //   TransactionList
-                      TransactionList()
-                    ],
-                  ),
-                ),
-                const Positioned(
-                  top: 20,
-                  left: 25,
-                  right: 25,
-                  child: CreditCard(),
-                )
-              ],
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: const Column(
+                children: [
+                  SizedBox(height: 25),
+                  TransactionList(),
+                ],
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -99,7 +84,16 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: currentIndex == 0 ? const Color(0xFF204887) : Colors.white,
-      body: pages[currentIndex],
+      body: Container(
+        decoration: BoxDecoration(
+          color: currentIndex == 0 ? const Color(0xFF204887) : Colors.white,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        child: pages[currentIndex],
+      ),
       bottomNavigationBar: BottomAppBar(
         color: Color(0xFFE8F2FF),
         child: Row(
@@ -185,8 +179,8 @@ class TransactionList extends StatelessWidget {
                 color: Color(0xFF47A1FF),
               ),
             ),
-            title: Text("Gym"),
-            subtitle: Text("Payment"),
+            title: Text("Steam"),
+            subtitle: Text("Purchase"),
             trailing: Text(
               "-\₱450.00",
               // style: TextStyle(color: Colors.red),
@@ -229,4 +223,3 @@ class TransactionList extends StatelessWidget {
     );
   }
 }
-

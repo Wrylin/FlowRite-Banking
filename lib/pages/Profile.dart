@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Welcome.dart';
+import 'package:flowrite_banking/AuthService.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -118,13 +119,18 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: EdgeInsets.all(15),
               child: ElevatedButton(
                 style: ButtonStyle(
-                    backgroundColor:
-                    MaterialStateProperty.all<Color>(Color(0xFF204887)),),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage()));
+                  backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF204887)),
+                ),
+                onPressed: () async {
+                  await AuthService().signout();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => WelcomePage()),
+                        (route) => false,
+                  );
                 },
                 child: Text(
-                  "Log Out",
+                  "Sign Out",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
