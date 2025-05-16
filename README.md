@@ -12,14 +12,6 @@ FlowRite_Banking is a simple Flutter-based mobile banking application prototype.
 - **Responsive UI**: Simple and intuitive user interface using Flutter widgets.
 - **Transfer**: Send money to other users. (in progress)
 
-## Development History
-
-- Initial UI implemented (March 23, 2025)
-- Authentication added and improved
-- Card page refactored into a transaction list with Firestore
-- Settings and user info pages added
-- Enhanced user experience with minor UI improvements
-
 ## Getting Started
 
 Clone the repository:
