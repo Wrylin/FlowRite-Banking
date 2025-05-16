@@ -1,16 +1,47 @@
-# flowrite_banking
+# FlowRite_Banking
 
-Banking App UI for MobDev
+FlowRite_Banking is a simple Flutter-based mobile banking application prototype. It provides basic financial services such as account creation, login, transaction history viewing, fund transfers, and user profile management.
+
+## Features
+
+- **User Authentication**: Secure login and signup functionality. Includes Google Authentication.
+- **Dashboard**: Overview of user financial activity.
+- **Transactions**: View past transactions and transfer history.
+- **Settings**: Update user profile information.
+- **Firestore Integration**: Stores user data and transactions securely.
+- **Responsive UI**: Simple and intuitive user interface using Flutter widgets.
+- **Transfer**: Send money to other users. (In progress)
+
+## Development History
+
+- Initial UI implemented (March 23, 2025)
+- Authentication added and improved
+- Card page refactored into a transaction list with Firestore
+- Settings and user info pages added
+- Enhanced user experience with minor UI improvements
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Clone the repository:
+```
+git clone https://github.com/yourusername/FlowRite_Banking.git
+```
+Install dependencies:
+```
+flutter pub get
+```
+Run the app:
+```
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Dependencies
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- firebase_core
+- firebase_auth
+- cloud_firestore
+- google_sign_in
+- flutter
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Notes
+> This project is a work-in-progress for my Software Development 2 class.
