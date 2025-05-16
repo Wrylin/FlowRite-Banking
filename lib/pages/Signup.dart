@@ -1,8 +1,11 @@
 import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flowrite_banking/pages/Login.dart';
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Dashboard.dart';
 import 'package:flowrite_banking/AuthService.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignupPage extends StatefulWidget {
   @override
@@ -105,7 +108,8 @@ class _SignupPageState extends State<SignupPage> {
                       final user = await _auth.signInWithGoogle();
                       if (user != null) {
                         log("Signed in with Google successfully");
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+                        _saveGoogleUserData(user);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
                       }
                     },
                     color: Colors.white,
@@ -162,7 +166,76 @@ class _SignupPageState extends State<SignupPage> {
     final user = await _auth.createUserWithEmailAndPassword(emailController.text, passwordController.text);
     if (user != null) {
       log("User Created Successfully");
+      _savedUserData(user.uid);
       Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    }
+  }
+
+  _savedUserData(String userid) async {
+    FirebaseFirestore users = FirebaseFirestore.instance;
+    FirebaseFirestore bankacc = FirebaseFirestore.instance;
+    //checking if there is an existing user
+    final existingUser = await users
+        .collection('user-data')
+        .where('email', isEqualTo: emailController.text)
+        .limit(1)
+        .get();
+    if (existingUser.docs.isEmpty) {
+      //no user with the email
+      users.collection('user-data')
+          .doc(userid)
+          .set({
+        'name': nameController.text,
+        'username': usernameController.text,
+        'email': emailController.text,
+        'pass': passwordController.text,
+      });
+      bankacc.collection('bank-account')
+          .doc(userid)
+          .set({
+        'account-number': '1111-2222-3333-4440',
+        'balance': 5000,
+      });
+      print('User added.');
+    }
+    else {
+      //user already exists
+      print('A User with this email already exists.');
+    }
+  }
+
+
+  _saveGoogleUserData(User user) async {
+    FirebaseFirestore userG = FirebaseFirestore.instance;
+    // Check if user already exists in Firestore
+    final existingUser = await userG
+        .collection('user-data')
+        .doc(user.uid)
+        .get();
+
+    if (!existingUser.exists) {
+      // Save user data to Firestore
+      await userG.collection('user-data')
+          .doc(user.uid)
+          .set({
+        'name': user.displayName ?? 'Google User',
+        'username': user.email?.split('@')[0] ?? 'user_${user.uid.substring(0, 5)}',
+        'email': user.email ?? '',
+        'photoURL': user.photoURL ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Create bank account
+      await userG.collection('bank-account')
+          .doc(user.uid)
+          .set({
+        'account-number': '1111-2222-3333-4440',
+        'balance': 5000,
+      });
+
+      log('Google user data saved.');
+    } else {
+      log('Google user already exists.');
     }
   }
 }

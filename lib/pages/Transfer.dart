@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flowrite_banking/pages/Card.dart';
+import 'package:flowrite_banking/pages/Dashboard.dart';
 
 class TransferPage extends StatelessWidget {
   const TransferPage({super.key});

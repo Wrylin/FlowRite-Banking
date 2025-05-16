@@ -1,8 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Dashboard.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CardPage extends StatelessWidget {
+class CardPage extends StatefulWidget {
   const CardPage({super.key});
+
+  @override
+  _CardPageState createState() => _CardPageState();
+}
+
+class _CardPageState extends State<CardPage> {
+  UserData? userData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Get user profile data
+        final userDoc = await FirebaseFirestore.instance
+            .collection('user-data')
+            .doc(user.uid)
+            .get();
+
+        // Get bank account data
+        final bankDoc = await FirebaseFirestore.instance
+            .collection('bank-account')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists && bankDoc.exists) {
+          final name = userDoc.data()?['name'] ?? 'User';
+          final accountNumber = bankDoc.data()?['account-number'] ?? '1023-1000';
+          final balance = (bankDoc.data()?['balance'] ?? 0).toDouble();
+
+          setState(() {
+            userData = UserData(
+              name: name,
+              accountNumber: accountNumber,
+              balance: balance,
+            );
+            isLoading = false;
+          });
+        } else {
+          setState(() => isLoading = false);
+        }
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +69,7 @@ class CardPage extends StatelessWidget {
         backgroundColor: Colors.white,
         leading: IconButton.outlined(
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardPage()));
           },
           icon: const Icon(
             Icons.arrow_back_ios_new,
@@ -24,17 +81,19 @@ class CardPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w500),
         ),
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
               const SizedBox(height: 20),
               // BackCard
-              const BackCard(),
+              BackCard(userData: userData),
               const SizedBox(height: 25),
               // FrontCard
-              const FrontCard(),
+              FrontCard(userData: userData),
               const SizedBox(height: 30),
               TextButton.icon(
                 onPressed: () {},
@@ -65,10 +124,19 @@ class CardPage extends StatelessWidget {
 }
 
 class FrontCard extends StatelessWidget {
-  const FrontCard({super.key});
+  final UserData? userData;
+
+  const FrontCard({super.key, this.userData});
 
   @override
   Widget build(BuildContext context) {
+    // Format account number with asterisks
+    String formattedAccountNumber = userData?.accountNumber ?? "**** **** **** 2534";
+    if (formattedAccountNumber.length > 4) {
+      String lastFour = formattedAccountNumber.substring(formattedAccountNumber.length - 4);
+      formattedAccountNumber = "**** **** **** $lastFour";
+    }
+
     return Container(
         height: 240,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
@@ -82,12 +150,12 @@ class FrontCard extends StatelessWidget {
                   color: const Color.fromARGB(255, 14, 19, 29),
                   child: Stack(
                     children: [
-                      const Positioned(
+                      Positioned(
                         bottom: 16,
                         left: 16,
                         child: Text(
-                          "**** **** **** 2534",
-                          style: TextStyle(
+                          formattedAccountNumber,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                           ),
@@ -106,19 +174,19 @@ class FrontCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Diana Aurellano',
-                              style: TextStyle(
+                              userData?.name ?? 'User',
+                              style: const TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white
                               ),
                             ),
-                            Text(
+                            const Text(
                               '3/25',
                               style: TextStyle(
                                   fontSize: 14,
@@ -156,13 +224,22 @@ class FrontCard extends StatelessWidget {
 
 
 class BackCard extends StatelessWidget {
-  const BackCard({super.key});
+  final UserData? userData;
+
+  const BackCard({super.key, this.userData});
 
   @override
   Widget build(BuildContext context) {
+    // Format account number with asterisks
+    String formattedAccountNumber = userData?.accountNumber ?? "**** **** **** 2534";
+    if (formattedAccountNumber.length > 4) {
+      String lastFour = formattedAccountNumber.substring(formattedAccountNumber.length - 4);
+      formattedAccountNumber = "**** **** **** $lastFour";
+    }
+
     return Container(
       height: 240,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Color(0xFF204887)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: const Color(0xFF204887)),
       child: Stack(
         children: [
           Padding(
@@ -191,17 +268,17 @@ class BackCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "**** **** **** 2534",
-                      style: TextStyle(
+                      formattedAccountNumber,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                       ),
                     ),
-                    Text(
+                    const Text(
                       "11/16",
                       style: TextStyle(
                         color: Colors.grey,
@@ -210,9 +287,9 @@ class BackCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Text(
-                  "Diana Aurellano",
-                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                Text(
+                  userData?.name ?? 'User',
+                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -220,83 +297,5 @@ class BackCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class CreditCard extends StatelessWidget {
-  const CreditCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        height: 220,
-        width: 350,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Column(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Container(
-                  color: const Color.fromARGB(255, 14, 19, 29),
-                  child: Stack(
-                    children: [
-                      const Positioned(
-                        bottom: 16,
-                        left: 16,
-                        child: Text(
-                          "**** **** **** 2534",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Container(
-                  color: const Color(0xFF007BA4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          '\₱50,250.00',
-                          style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            CircleAvatar(
-                              radius: 15,
-                              backgroundColor: Colors.white.withOpacity(0.8),
-                            ),
-                            Transform.translate(
-                              offset: const Offset(-10, 0),
-                              child: CircleAvatar(
-                                radius: 15,
-                                backgroundColor: Colors.white.withOpacity(0.8),
-                              ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
-        ));
   }
 }

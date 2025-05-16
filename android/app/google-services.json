@@ -37,6 +37,13 @@
             {
               "client_id": "475518325058-0l8p446fs24sk15kuquuvv561nnngstv.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "475518325058-3s138o0ms3elu4i9qt67kmut24v7f9ao.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flowriteBanking"
+              }
             }
           ]
         }
