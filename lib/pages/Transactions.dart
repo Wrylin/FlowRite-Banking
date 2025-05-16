@@ -403,17 +403,17 @@ class _TransactionPageState extends State<TransactionPage> {
               const SizedBox(height: 30),
 
               // Process Button
-              SizedBox(
+              Container(
+                padding: const EdgeInsets.only(top: 3, left: 3),
                 width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
+                child: MaterialButton(
+                  minWidth: double.infinity,
+                  height: 60,
                   onPressed: isProcessing ? null : _processTransaction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007BA4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    disabledBackgroundColor: Colors.grey,
+                  color: const Color(0xFF007BA4),
+                  disabledColor: Colors.grey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50),
                   ),
                   child: isProcessing
                       ? const SizedBox(
@@ -427,10 +427,9 @@ class _TransactionPageState extends State<TransactionPage> {
                       : Text(
                     transactionType == 'deposit' ? "Deposit Now" : "Withdraw Now",
                     style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        color: Colors.white),
                   ),
                 ),
               ),
