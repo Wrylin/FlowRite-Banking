@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flowrite_banking/pages/Login.dart';
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Dashboard.dart';
@@ -108,8 +107,9 @@ class _SignupPageState extends State<SignupPage> {
                       final user = await _auth.signInWithGoogle();
                       if (user != null) {
                         log("Signed in with Google successfully");
-                        _saveGoogleUserData(user);
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                        await _saveGoogleUserData(user);
+                        // Navigate directly to Dashboard instead of LoginPage
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
                       }
                     },
                     color: Colors.white,
@@ -166,8 +166,13 @@ class _SignupPageState extends State<SignupPage> {
     final user = await _auth.createUserWithEmailAndPassword(emailController.text, passwordController.text);
     if (user != null) {
       log("User Created Successfully");
-      _savedUserData(user.uid);
-      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+      await _savedUserData(user.uid);
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+    }
+    else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('A User with this email already exists.')),
+      );
     }
   }
 
@@ -182,7 +187,7 @@ class _SignupPageState extends State<SignupPage> {
         .get();
     if (existingUser.docs.isEmpty) {
       //no user with the email
-      users.collection('user-data')
+      await users.collection('user-data')
           .doc(userid)
           .set({
         'name': nameController.text,
@@ -190,7 +195,7 @@ class _SignupPageState extends State<SignupPage> {
         'email': emailController.text,
         'pass': passwordController.text,
       });
-      bankacc.collection('bank-account')
+      await bankacc.collection('bank-account')
           .doc(userid)
           .set({
         'account-number': '1111-2222-3333-4440',

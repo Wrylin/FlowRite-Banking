@@ -149,7 +149,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => UserPage()),
-                      );
+                      ).then((_) {
+                        // Refresh user data when returning from UserPage
+                        _loadUserProfile();
+                      });
                     },
                     leading: const CircleAvatar(
                       backgroundColor: Color.fromARGB(255, 239, 243, 245),
@@ -199,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: ElevatedButton(
                 style: ButtonStyle(
                   backgroundColor:
-                  MaterialStateProperty.all<Color>(const Color(0xFF204887)),
+                  WidgetStateProperty.all<Color>(const Color(0xFF204887)),
                 ),
                 onPressed: () async {
                   await AuthService().signout();

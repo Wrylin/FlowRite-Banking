@@ -251,6 +251,16 @@ class _TransactionPageState extends State<TransactionPage> {
           style: TextStyle(fontWeight: FontWeight.w500),
         ),
         elevation: 0,
+        leading: IconButton.outlined(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            // Navigate to Dashboard explicitly instead of using the default back behavior
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardPage()),
+            );
+          },
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

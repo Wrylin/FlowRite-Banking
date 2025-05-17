@@ -184,7 +184,7 @@ class _UserPageState extends State<UserPage> {
             await user.reauthenticateWithCredential(credential);
 
             // Now we can update the email
-            await user.updateEmail(emailController.text);
+            await user.verifyBeforeUpdateEmail(emailController.text);
 
             print('Email updated successfully');
           } catch (e) {
@@ -283,11 +283,11 @@ class _UserPageState extends State<UserPage> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        leading: IconButton(
+        leading: IconButton.outlined(
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new),
         ),
         title: const Text(
           "Edit Account",
