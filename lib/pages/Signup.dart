@@ -199,7 +199,7 @@ class _SignupPageState extends State<SignupPage> {
           .doc(userid)
           .set({
         'account-number': '1111-2222-3333-4440',
-        'balance': 5000,
+        'balance': 1000,
       });
       print('User added.');
     }

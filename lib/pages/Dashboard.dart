@@ -247,75 +247,217 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class HistoryList extends StatelessWidget {
+class HistoryList extends StatefulWidget {
   const HistoryList({super.key});
+
+  @override
+  State<HistoryList> createState() => _HistoryListState();
+}
+
+class _HistoryListState extends State<HistoryList> {
+  bool isLoading = true;
+  List<Map<String, dynamic>> transactions = [];
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentTransactions();
+  }
+
+  Future<void> _loadRecentTransactions() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // Query transactions collection for the current user's 3 most recent transactions
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('transactions')
+            .where('userId', isEqualTo: user.uid)
+            .orderBy('timestamp', descending: true) // Most recent first
+            .limit(3) // Only get 3 transactions
+            .get();
+
+        final loadedTransactions = querySnapshot.docs.map((doc) {
+          final data = doc.data();
+          // Add the document ID to the data
+          return {
+            'id': doc.id,
+            ...data,
+            // Convert Firestore timestamp to DateTime if it exists
+            'timestamp': data['timestamp'] != null
+                ? (data['timestamp'] as Timestamp).toDate()
+                : DateTime.now(),
+          };
+        }).toList();
+
+        setState(() {
+          transactions = loadedTransactions;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = "No user is currently signed in";
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading transactions: $e');
+      setState(() {
+        errorMessage = "Error: $e";
+        isLoading = false;
+      });
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    // Convert to string and split by decimal point
+    String amountStr = amount.toStringAsFixed(2);
+    List<String> parts = amountStr.split('.');
+
+    // Format the whole number part with commas
+    String wholeNumber = parts[0];
+    String result = '';
+
+    for (int i = 0; i < wholeNumber.length; i++) {
+      if (i > 0 && (wholeNumber.length - i) % 3 == 0) {
+        result += ',';
+      }
+      result += wholeNumber[i];
+    }
+
+    // Add decimal part back
+    return '$result.${parts[1]}';
+  }
+
+  String _formatDate(DateTime date) {
+    // Format as Month day, year
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return "${months[date.month - 1]} ${date.day}, ${date.year}";
+  }
+
+  String _formatHeaderDate(DateTime date) {
+    // Get today's date
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateToCheck = DateTime(date.year, date.month, date.day);
+
+    if (dateToCheck == today) {
+      return "Today";
+    } else if (dateToCheck == yesterday) {
+      return "Yesterday";
+    } else {
+      // Format as Month Day
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return "${months[date.month - 1]} ${date.day}";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: ListView(
+      child: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(child: Text("Error: $errorMessage"))
+          : Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 25.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Today, Mar 28"),
-                Row(
-                  children: [
-                    Text("All Transactions"),
-                  ],
+                Text(
+                  transactions.isNotEmpty
+                      ? _formatHeaderDate(transactions.first['timestamp'] as DateTime)
+                      : "Recent Transactions",
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HistoryPage())
+                    );
+                  },
+                  child: const Row(
+                    children: [
+                      Text(
+                        "All Transactions",
+                        style: TextStyle(color: Color(0xFF007BA4)),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: Color(0xFF007BA4),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Color.fromARGB(255, 239, 243, 245),
-              child: Icon(
-                Icons.gamepad,
-                color: Color(0xFF47A1FF),
+          transactions.isEmpty
+              ? const Expanded(
+            child: Center(
+              child: Text(
+                "No transactions yet",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
               ),
-            ),
-            title: Text("Steam"),
-            subtitle: Text("Purchase"),
-            trailing: Text(
-              "-\₱450.00",
-              // style: TextStyle(color: Colors.red),
-            ),
-          ),
-          Divider(color: Colors.grey[200]),
-          const ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Color.fromARGB(255, 239, 243, 245),
-              child: Icon(
-                Icons.account_balance,
-                color: Color(0xFF204887),
-              ),
-            ),
-            title: Text("Banco De Oro"),
-            subtitle: Text("Deposit"),
-            trailing: Text(
-              "+\₱5,789.00",
-              style: TextStyle(color: Color(0xFF204887)),
-            ),
-          ),
-          Divider(color: Colors.grey[200]),
-          const ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Color.fromARGB(255, 239, 243, 245),
-              child: Icon(
-                Icons.send,
-                color: Color(0xFF007BA4),
-              ),
-            ),
-            title: Text("To Arnel Victoria"),
-            subtitle: Text("Sent"),
-            trailing: Text(
-              "-\₱760.00",
-              // style: TextStyle(color: Colors.red),
             ),
           )
+              : Expanded(
+            child: ListView.separated(
+              itemCount: transactions.length,
+              separatorBuilder: (context, index) => Divider(color: Colors.grey[200]),
+              itemBuilder: (context, index) {
+                final transaction = transactions[index];
+                final isDeposit = transaction['type'] == 'deposit';
+                final amount = (transaction['amount'] as num).toDouble();
+                final description = transaction['description'] as String? ??
+                    (isDeposit ? 'Deposit' : 'Withdrawal');
+                final date = transaction['timestamp'] as DateTime;
+
+                // Choose icon based on transaction type
+                IconData iconData;
+                Color iconColor;
+
+                if (isDeposit) {
+                  iconData = Icons.arrow_downward;
+                  iconColor = Colors.green;
+                } else {
+                  iconData = Icons.arrow_upward;
+                  iconColor = const Color(0xFF007BA4);
+                }
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color.fromARGB(255, 239, 243, 245),
+                    child: Icon(
+                      iconData,
+                      color: iconColor,
+                    ),
+                  ),
+                  title: Text(description),
+                  subtitle: Text(_formatDate(date)),
+                  trailing: Text(
+                    "${isDeposit ? '+' : '-'}₱${_formatCurrency(amount)}",
+                    style: TextStyle(
+                      color: isDeposit ? Colors.green : Colors.black,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -329,12 +471,8 @@ class CreditCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Format account number with asterisks
-    String formattedAccountNumber = userData?.accountNumber ?? "**** **** **** 2534";
-    if (formattedAccountNumber.length > 4) {
-      String lastFour = formattedAccountNumber.substring(formattedAccountNumber.length - 4);
-      formattedAccountNumber = "**** **** **** $lastFour";
-    }
+    // Use the actual account number without masking
+    String accountNumber = userData?.accountNumber ?? "1023-1000";
 
     // Format balance with commas
     String formattedBalance = '₱${_formatCurrency(userData?.balance ?? 50250.00)}';
@@ -357,7 +495,7 @@ class CreditCard extends StatelessWidget {
                         bottom: 16,
                         left: 16,
                         child: Text(
-                          formattedAccountNumber,
+                          accountNumber,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
