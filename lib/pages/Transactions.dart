@@ -16,7 +16,7 @@ class _TransactionPageState extends State<TransactionPage> {
   bool isProcessing = false;
   String? errorMessage;
   UserData? userData;
-  String transactionType = 'deposit'; // Default to deposit
+  String transactionType = 'deposit'; // default to deposit
   bool hasTransactions = false;
 
   @override
@@ -34,10 +34,8 @@ class _TransactionPageState extends State<TransactionPage> {
 
   Future<void> _checkTransactionsCollection() async {
     try {
-      // Check if the transactions collection exists
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Try to get a document from the transactions collection
         final transactionsRef = FirebaseFirestore.instance.collection('transactions');
         final query = await transactionsRef.limit(1).get();
         setState(() {
@@ -62,7 +60,7 @@ class _TransactionPageState extends State<TransactionPage> {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        // Get user profile data
+        // get user profile data
         final userDoc = await FirebaseFirestore.instance
             .collection('user-data')
             .doc(user.uid)
@@ -73,7 +71,7 @@ class _TransactionPageState extends State<TransactionPage> {
           print("User data: ${userDoc.data()}");
         }
 
-        // Get bank Transaction data
+        // get bank Transaction data
         final bankDoc = await FirebaseFirestore.instance
             .collection('bank-account')
             .doc(user.uid)
@@ -119,7 +117,7 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _processTransaction() async {
-    // Validate amount
+    // validate amount
     if (_amountController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter an amount')),
@@ -143,7 +141,7 @@ class _TransactionPageState extends State<TransactionPage> {
       return;
     }
 
-    // Check if withdrawal is possible
+    // check if withdrawal is possible
     if (transactionType == 'withdraw' && userData != null && amount > userData!.balance) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Insufficient funds')),
@@ -167,7 +165,7 @@ class _TransactionPageState extends State<TransactionPage> {
           newBalance -= amount;
         }
 
-        // Update balance in Firestore
+        // update balance in firestore
         await FirebaseFirestore.instance
             .collection('bank-account')
             .doc(user.uid)
@@ -175,7 +173,7 @@ class _TransactionPageState extends State<TransactionPage> {
           'balance': newBalance,
         });
 
-        // Add transaction record
+        // add transaction record
         await FirebaseFirestore.instance
             .collection('transactions')
             .add({
@@ -190,13 +188,13 @@ class _TransactionPageState extends State<TransactionPage> {
           hasTransactions = true;
         });
 
-        // Reload user data to show updated balance
+        // reload user data
         await _loadUserData();
 
-        // Clear amount field
+        // clear amount field
         _amountController.clear();
 
-        // Show success message
+        // show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -221,11 +219,10 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   String _formatCurrency(double amount) {
-    // Convert to string and split by decimal point
     String amountStr = amount.toStringAsFixed(2);
     List<String> parts = amountStr.split('.');
 
-    // Format the whole number part with commas
+    // format money with comma
     String wholeNumber = parts[0];
     String result = '';
 
@@ -236,7 +233,7 @@ class _TransactionPageState extends State<TransactionPage> {
       result += wholeNumber[i];
     }
 
-    // Add decimal part back
+    // add decimal part back
     return '₱$result.${parts[1]}';
   }
 
@@ -254,11 +251,8 @@ class _TransactionPageState extends State<TransactionPage> {
         leading: IconButton.outlined(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            // Navigate to Dashboard explicitly instead of using the default back behavior
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const DashboardPage()),
-            );
+            Navigator.pushReplacement
+              (context, MaterialPageRoute(builder: (context) => const DashboardPage()),);
           },
         ),
       ),
@@ -272,7 +266,7 @@ class _TransactionPageState extends State<TransactionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Balance Card
+              // balance Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -313,7 +307,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
               const SizedBox(height: 30),
 
-              // Transaction Type Selector
+              // transaction type selector
               const Text(
                 "Transaction Type",
                 style: TextStyle(
@@ -388,7 +382,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
               const SizedBox(height: 30),
 
-              // Amount Input
+              // input amount
               const Text(
                 "Amount",
                 style: TextStyle(
@@ -412,7 +406,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
               const SizedBox(height: 30),
 
-              // Process Button
+              // process button
               Container(
                 padding: const EdgeInsets.only(top: 3, left: 3),
                 width: double.infinity,

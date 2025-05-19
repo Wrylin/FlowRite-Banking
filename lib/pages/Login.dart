@@ -241,7 +241,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _loginFunc() async {
-    // Basic validation
+    // basic validation
     if (usernameOrEmailController.text.isEmpty || passwordController.text.isEmpty) {
       setState(() {
         errorMessage = "Please enter both username/email and password";

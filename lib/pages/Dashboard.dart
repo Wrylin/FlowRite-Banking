@@ -275,12 +275,12 @@ class _HistoryListState extends State<HistoryList> {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        // Query transactions collection for the current user's 3 most recent transactions
+        // query transactions collection for the current user's 3 most recent transactions
         final querySnapshot = await FirebaseFirestore.instance
             .collection('transactions')
             .where('userId', isEqualTo: user.uid)
-            .orderBy('timestamp', descending: true) // Most recent first
-            .limit(3) // Only get 3 transactions
+            .orderBy('timestamp', descending: true) // most recent first
+            .limit(3)
             .get();
 
         final loadedTransactions = querySnapshot.docs.map((doc) {
@@ -289,7 +289,7 @@ class _HistoryListState extends State<HistoryList> {
           return {
             'id': doc.id,
             ...data,
-            // Convert Firestore timestamp to DateTime if it exists
+            // convert firestore timestamp to datetime if it exists
             'timestamp': data['timestamp'] != null
                 ? (data['timestamp'] as Timestamp).toDate()
                 : DateTime.now(),
@@ -316,11 +316,10 @@ class _HistoryListState extends State<HistoryList> {
   }
 
   String _formatCurrency(double amount) {
-    // Convert to string and split by decimal point
     String amountStr = amount.toStringAsFixed(2);
     List<String> parts = amountStr.split('.');
 
-    // Format the whole number part with commas
+    // format money with comma
     String wholeNumber = parts[0];
     String result = '';
 
@@ -331,18 +330,18 @@ class _HistoryListState extends State<HistoryList> {
       result += wholeNumber[i];
     }
 
-    // Add decimal part back
+    // add decimal part back
     return '$result.${parts[1]}';
   }
 
   String _formatDate(DateTime date) {
-    // Format as Month day, year
+    // format as month day, year
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return "${months[date.month - 1]} ${date.day}, ${date.year}";
   }
 
   String _formatHeaderDate(DateTime date) {
-    // Get today's date
+    // get today's date
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -353,7 +352,6 @@ class _HistoryListState extends State<HistoryList> {
     } else if (dateToCheck == yesterday) {
       return "Yesterday";
     } else {
-      // Format as Month Day
       final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return "${months[date.month - 1]} ${date.day}";
     }
@@ -426,7 +424,7 @@ class _HistoryListState extends State<HistoryList> {
                     (isDeposit ? 'Deposit' : 'Withdrawal');
                 final date = transaction['timestamp'] as DateTime;
 
-                // Choose icon based on transaction type
+                // choose icon based on transaction type
                 IconData iconData;
                 Color iconColor;
 
@@ -471,10 +469,9 @@ class CreditCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use the actual account number without masking
-    String accountNumber = userData?.accountNumber ?? "1023-1000";
+    String accountNumber = userData?.accountNumber ?? "1023-1000"; //placeholder number
 
-    // Format balance with commas
+    // format balance with commas
     String formattedBalance = '₱${_formatCurrency(userData?.balance ?? 50250.00)}';
 
     return Container(
@@ -550,11 +547,10 @@ class CreditCard extends StatelessWidget {
   }
 
   String _formatCurrency(double amount) {
-    // Convert to string and split by decimal point
     String amountStr = amount.toStringAsFixed(2);
     List<String> parts = amountStr.split('.');
 
-    // Format the whole number part with commas
+    // format money with comma
     String wholeNumber = parts[0];
     String result = '';
 
@@ -565,7 +561,7 @@ class CreditCard extends StatelessWidget {
       result += wholeNumber[i];
     }
 
-    // Add decimal part back
+    // add decimal part back
     return '$result.${parts[1]}';
   }
 }

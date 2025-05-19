@@ -32,20 +32,18 @@ class _HistoryPageState extends State<HistoryPage> {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        // Query transactions collection for the current user's transactions
+        // query transactions collection for the current user's transactions
         final querySnapshot = await FirebaseFirestore.instance
             .collection('transactions')
             .where('userId', isEqualTo: user.uid)
-            .orderBy('timestamp', descending: true) // Most recent first
+            .orderBy('timestamp', descending: true) // most recent first
             .get();
 
         final loadedTransactions = querySnapshot.docs.map((doc) {
           final data = doc.data();
-          // Add the document ID to the data
           return {
             'id': doc.id,
             ...data,
-            // Convert Firestore timestamp to DateTime if it exists
             'timestamp': data['timestamp'] != null
                 ? (data['timestamp'] as Timestamp).toDate()
                 : DateTime.now(),
@@ -72,11 +70,10 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _formatCurrency(double amount) {
-    // Convert to string and split by decimal point
     String amountStr = amount.toStringAsFixed(2);
     List<String> parts = amountStr.split('.');
 
-    // Format the whole number part with commas
+    // format money with comma
     String wholeNumber = parts[0];
     String result = '';
 
@@ -87,7 +84,7 @@ class _HistoryPageState extends State<HistoryPage> {
       result += wholeNumber[i];
     }
 
-    // Add decimal part back
+    // add decimal part back
     return '₱$result.${parts[1]}';
   }
 
@@ -116,7 +113,7 @@ class _HistoryPageState extends State<HistoryPage> {
         actions: [
           IconButton.outlined(
             onPressed: () {
-              // Refresh transactions when the user taps this button
+              // refresh transactions when the user taps this button
               _loadTransactions();
             },
             icon: const Icon(
@@ -131,7 +128,6 @@ class _HistoryPageState extends State<HistoryPage> {
           ? Center(child: Text("Error: $errorMessage"))
           : Column(
         children: [
-          // Fixed part - Cards section
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SingleChildScrollView(
@@ -190,7 +186,6 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
 
-          // Fixed part - History header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(

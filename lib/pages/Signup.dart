@@ -108,7 +108,6 @@ class _SignupPageState extends State<SignupPage> {
                       if (user != null) {
                         log("Signed in with Google successfully");
                         await _saveGoogleUserData(user);
-                        // Navigate directly to Dashboard instead of LoginPage
                         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
                       }
                     },
@@ -212,14 +211,14 @@ class _SignupPageState extends State<SignupPage> {
 
   _saveGoogleUserData(User user) async {
     FirebaseFirestore userG = FirebaseFirestore.instance;
-    // Check if user already exists in Firestore
+    // Check if user already exists
     final existingUser = await userG
         .collection('user-data')
         .doc(user.uid)
         .get();
 
     if (!existingUser.exists) {
-      // Save user data to Firestore
+      // Save user data
       await userG.collection('user-data')
           .doc(user.uid)
           .set({
@@ -235,7 +234,7 @@ class _SignupPageState extends State<SignupPage> {
           .doc(user.uid)
           .set({
         'account-number': '1111-2222-3333-4440',
-        'balance': 5000,
+        'balance': 1000,
       });
 
       log('Google user data saved.');
