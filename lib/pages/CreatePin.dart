@@ -139,9 +139,9 @@ class _CreatePinPageState extends State<CreatePinPage> {
                     child: Text(
                       "Create PIN",
                       style: TextStyle(
-                        color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ),

@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Custom formatter for account numbers (adds hyphens after every 4 digits)
+// adds hyphens after every 4 digits
 class AccountNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue, TextEditingValue newValue) {
     // Only allow digits
     final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
 
