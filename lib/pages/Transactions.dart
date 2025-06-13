@@ -18,6 +18,7 @@ class _TransactionPageState extends State<TransactionPage> {
   UserData? userData;
   String transactionType = 'deposit'; // default to deposit
   bool hasTransactions = false;
+  bool _transactionCompleted = false; // Track if a transaction was completed
 
   @override
   void initState() {
@@ -186,6 +187,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
         setState(() {
           hasTransactions = true;
+          _transactionCompleted = true; // Set flag to indicate transaction completed
         });
 
         // reload user data
@@ -239,209 +241,216 @@ class _TransactionPageState extends State<TransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Account",
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-        elevation: 0,
-        leading: IconButton.outlined(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () {
-            Navigator.pushReplacement
-              (context, MaterialPageRoute(builder: (context) => const DashboardPage()),);
-          },
-        ),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text("Error: $errorMessage"))
-          : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // balance Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF204887),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Current Balance",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _formatCurrency(userData?.balance ?? 0),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Account: ${userData?.accountNumber ?? ''}",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // transaction type selector
-              const Text(
-                "Transaction Type",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
+    return WillPopScope(
+      onWillPop: () async {
+        // Return whether a transaction was completed
+        Navigator.pop(context, _transactionCompleted);
+        return false;
+      },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            title: const Text(
+              "Account",
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            elevation: 0,
+            leading: IconButton.outlined(
+              icon: const Icon(Icons.arrow_back_ios_new),
+              onPressed: () {
+                // Return whether a transaction was completed
+                Navigator.pop(context, _transactionCompleted);
+              },
+            ),
+          ),
+          body: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text("Error: $errorMessage"))
+              : SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          transactionType = 'deposit';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        decoration: BoxDecoration(
-                          color: transactionType == 'deposit'
-                              ? const Color(0xFF007BA4)
-                              : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Deposit",
-                            style: TextStyle(
-                              color: transactionType == 'deposit'
-                                  ? Colors.white
-                                  : Colors.black87,
-                              fontWeight: FontWeight.w500,
-                            ),
+                  // balance Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF204887),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Current Balance",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _formatCurrency(userData?.balance ?? 0),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "Account: ${userData?.accountNumber ?? ''}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          transactionType = 'withdraw';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        decoration: BoxDecoration(
-                          color: transactionType == 'withdraw'
-                              ? const Color(0xFF007BA4)
-                              : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Withdraw",
-                            style: TextStyle(
-                              color: transactionType == 'withdraw'
-                                  ? Colors.white
-                                  : Colors.black87,
-                              fontWeight: FontWeight.w500,
+
+                  const SizedBox(height: 30),
+
+                  // transaction type selector
+                  const Text(
+                    "Transaction Type",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              transactionType = 'deposit';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            decoration: BoxDecoration(
+                              color: transactionType == 'deposit'
+                                  ? const Color(0xFF007BA4)
+                                  : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Deposit",
+                                style: TextStyle(
+                                  color: transactionType == 'deposit'
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              transactionType = 'withdraw';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            decoration: BoxDecoration(
+                              color: transactionType == 'withdraw'
+                                  ? const Color(0xFF007BA4)
+                                  : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Withdraw",
+                                style: TextStyle(
+                                  color: transactionType == 'withdraw'
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // input amount
+                  const Text(
+                    "Amount",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      prefixText: '₱ ',
+                      hintText: '0.00',
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // process button
+                  Container(
+                    padding: const EdgeInsets.only(top: 3, left: 3),
+                    width: double.infinity,
+                    child: MaterialButton(
+                      minWidth: double.infinity,
+                      height: 60,
+                      onPressed: isProcessing ? null : _processTransaction,
+                      color: const Color(0xFF007BA4),
+                      disabledColor: Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: isProcessing
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                          : Text(
+                        transactionType == 'deposit' ? "Deposit Now" : "Withdraw Now",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            color: Colors.white),
                       ),
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 30),
-
-              // input amount
-              const Text(
-                "Amount",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _amountController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  prefixText: '₱ ',
-                  hintText: '0.00',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // process button
-              Container(
-                padding: const EdgeInsets.only(top: 3, left: 3),
-                width: double.infinity,
-                child: MaterialButton(
-                  minWidth: double.infinity,
-                  height: 60,
-                  onPressed: isProcessing ? null : _processTransaction,
-                  color: const Color(0xFF007BA4),
-                  disabledColor: Colors.grey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: isProcessing
-                      ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : Text(
-                    transactionType == 'deposit' ? "Deposit Now" : "Withdraw Now",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

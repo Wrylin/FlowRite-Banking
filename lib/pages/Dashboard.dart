@@ -19,7 +19,12 @@ class UserData {
 }
 
 class DashboardContent extends StatefulWidget {
-  const DashboardContent({super.key});
+  final Function? refreshCallback;
+
+  const DashboardContent({
+    super.key,
+    this.refreshCallback
+  });
 
   @override
   _DashboardContentState createState() => _DashboardContentState();
@@ -142,10 +147,10 @@ class _DashboardContentState extends State<DashboardContent> {
               decoration: const BoxDecoration(
                 color: Colors.white,
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  SizedBox(height: 25),
-                  HistoryList(),
+                  const SizedBox(height: 25),
+                  HistoryList(refreshCallback: widget.refreshCallback),
                 ],
               ),
             ),
@@ -165,18 +170,50 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int currentIndex = 0;
-
   late final List<Widget> pages;
+  final GlobalKey<_DashboardContentState> dashboardKey = GlobalKey<_DashboardContentState>();
+  final GlobalKey<_HistoryListState> historyListKey = GlobalKey<_HistoryListState>();
+
+  void refreshDashboard() {
+    // This will refresh both the user data and transaction history
+    setState(() {
+      // Force rebuild of the current page
+      if (currentIndex == 0) {
+        // If we're on the dashboard, reload user data and transactions
+        final dashboardContent = pages[0] as DashboardContent;
+        if (dashboardContent.key == dashboardKey) {
+          dashboardKey.currentState?._loadUserData();
+        }
+      } else if (currentIndex == 1) {
+        // If we're on the transactions page, rebuild it
+        pages[1] = const TransactionPage();
+      }
+    });
+  }
+
+  // Method to navigate to transfer page and handle refresh on return
+  Future<void> _navigateToTransferPage() async {
+    // Navigate to TransferPage and await result
+    final bool? needsRefresh = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TransferPage()),
+    );
+
+    // If a transfer was completed, refresh the dashboard
+    if (needsRefresh == true) {
+      refreshDashboard();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     pages = [
-      const DashboardContent(), // Use the separate content widget
+      DashboardContent(key: dashboardKey, refreshCallback: refreshDashboard),
       const TransactionPage(),
       const TransferPage(),
       const HistoryPage(),
-      const SettingsPage(), // Placeholder for Setting
+      const SettingsPage(),
     ];
   }
 
@@ -202,10 +239,7 @@ class _DashboardPageState extends State<DashboardPage> {
             tabItem(Icons.home, "Home", 0),
             tabItem(Icons.credit_card, "Money", 1),
             FloatingActionButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const TransferPage()));
-              },
+              onPressed: _navigateToTransferPage, // Use the new method
               backgroundColor: const Color(0xFF007BA4),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30)),
@@ -241,14 +275,27 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void onTabTapped(int index) {
-    setState(() {
-      currentIndex = index;
-    });
+    // If we're switching to the dashboard or transactions tab, refresh the data
+    if ((index == 0 || index == 1) && index != currentIndex) {
+      setState(() {
+        currentIndex = index;
+        refreshDashboard();
+      });
+    } else {
+      setState(() {
+        currentIndex = index;
+      });
+    }
   }
 }
 
 class HistoryList extends StatefulWidget {
-  const HistoryList({super.key});
+  final Function? refreshCallback;
+
+  const HistoryList({
+    super.key,
+    this.refreshCallback
+  });
 
   @override
   State<HistoryList> createState() => _HistoryListState();
@@ -377,11 +424,17 @@ class _HistoryListState extends State<HistoryList> {
                       : "Recent Transactions",
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    // Navigate to history page and handle refresh on return
+                    final result = await Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const HistoryPage())
                     );
+
+                    // Check if we need to refresh
+                    if (result == true && widget.refreshCallback != null) {
+                      widget.refreshCallback!();
+                    }
                   },
                   child: const Row(
                     children: [

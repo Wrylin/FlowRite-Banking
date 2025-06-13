@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AccountNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue, TextEditingValue newValue) {
+      TextEditingValue oldValue, TextEditingValue newValue) {
     // Only allow digits
     final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
 
@@ -63,6 +63,7 @@ class _TransferPageState extends State<TransferPage> {
   bool _isLoading = false;
   bool _isVerifyingReceiver = false;
   String? _errorMessage;
+  bool _transferCompleted = false; // Track if a transfer was completed
 
   // Current user data
   double _currentBalance = 0.0;
@@ -118,6 +119,12 @@ class _TransferPageState extends State<TransferPage> {
     }
 
     super.dispose();
+  }
+
+  // Handle back navigation with refresh
+  void _handleBackNavigation() {
+    // Pop and return whether a transfer was completed
+    Navigator.of(context).pop(_transferCompleted);
   }
 
   Future<void> _loadUserData() async {
@@ -492,6 +499,11 @@ class _TransferPageState extends State<TransferPage> {
       // Commit the batch
       await batch.commit();
 
+      // Set transfer completed flag to true
+      setState(() {
+        _transferCompleted = true;
+      });
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -544,298 +556,288 @@ class _TransferPageState extends State<TransferPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return WillPopScope(
+      onWillPop: () async {
+        _handleBackNavigation();
+        return false; // Prevent default back behavior
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        leading: IconButton.outlined(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          leading: IconButton.outlined(
+            onPressed: _handleBackNavigation,
+            icon: const Icon(Icons.arrow_back_ios_new),
+          ),
+          title: const Text(
+            "Transfer",
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
         ),
-        title: const Text(
-          "Transfer Money",
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? Center(child: Text("Error: $_errorMessage"))
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Balance Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF204887),
-                  borderRadius: BorderRadius.circular(15),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? Center(child: Text("Error: $_errorMessage"))
+            : SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Balance Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF204887),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Available Balance",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatCurrency(_currentBalance),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "Account: $_currentAccountNumber",
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
+
+                const SizedBox(height: 30),
+
+                // Amount Field
+                const Text(
+                  "Amount",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    prefixText: '₱ ',
+                    hintText: '0.00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter an amount';
+                    }
+                    try {
+                      double amount = double.parse(value);
+                      if (amount <= 0) {
+                        return 'Amount must be greater than zero';
+                      }
+                      if (amount > _currentBalance) {
+                        return 'Insufficient funds';
+                      }
+                    } catch (e) {
+                      return 'Please enter a valid amount';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Receiver Account Number Field with auto-formatting
+                const Text(
+                  "Receiver's Account Number",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Available Balance",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
+                    Expanded(
+                      child: TextFormField(
+                        controller: _accountNumberController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          AccountNumberFormatter(),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: '1111-2222-3333-4444',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter receiver\'s account number';
+                          }
+                          // Check if the account number has the correct format (16 digits + 3 hyphens)
+                          if (value.replaceAll('-', '').length != 16) {
+                            return 'Please enter a valid 16-digit account number';
+                          }
+                          if (value == _currentAccountNumber) {
+                            return 'Cannot transfer to your own account';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _formatCurrency(_currentBalance),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Account: $_currentAccountNumber",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 50, // Match the height of the TextFormField
+                      child: ElevatedButton(
+                        onPressed: _isVerifyingReceiver ? null : _verifyReceiverAccount,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007BA4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        child: _isVerifyingReceiver
+                            ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : const Text(
+                          'Verify',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
 
-              const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-              // Amount Field
-              const Text(
-                "Amount",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  prefixText: '₱ ',
-                  hintText: '0.00',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                // Receiver Name Field
+                const Text(
+                  "Receiver's Name",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  try {
-                    double amount = double.parse(value);
-                    if (amount <= 0) {
-                      return 'Amount must be greater than zero';
-                    }
-                    if (amount > _currentBalance) {
-                      return 'Insufficient funds';
-                    }
-                  } catch (e) {
-                    return 'Please enter a valid amount';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // Receiver Account Number Field with auto-formatting
-              const Text(
-                "Receiver's Account Number",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _accountNumberController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        AccountNumberFormatter(),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: '1111-2222-3333-4444',
-                        hintStyle: TextStyle(color: Colors.grey[500]),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter receiver\'s account number';
-                        }
-                        // Check if the account number has the correct format (16 digits + 3 hyphens)
-                        if (value.replaceAll('-', '').length != 16) {
-                          return 'Please enter a valid 16-digit account number';
-                        }
-                        if (value == _currentAccountNumber) {
-                          return 'Cannot transfer to your own account';
-                        }
-                        return null;
-                      },
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _receiverNameController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    hintText: 'Verify account number to see name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                    fillColor: Colors.grey[200],
+                    filled: true,
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 50, // Match the height of the TextFormField
-                    child: ElevatedButton(
-                      onPressed: _isVerifyingReceiver ? null : _verifyReceiverAccount,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007BA4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      child: _isVerifyingReceiver
-                          ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : const Text(
-                        'Verify',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // Receiver Name Field
-              const Text(
-                "Receiver's Name",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _receiverNameController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'Verify account number to see name',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                  fillColor: Colors.grey[200],
-                  filled: true,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please verify receiver\'s account number';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // Purpose Field (Optional)
-              const Text(
-                "Purpose (Optional)",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _purposeController,
-                decoration: InputDecoration(
-                  hintText: 'E.g., Rent payment, Gift, etc.',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Transfer Button
-              Container(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                    if (_formKey.currentState!.validate()) {
-                      _showPinVerificationDialog();
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please verify receiver\'s account number';
                     }
+                    return null;
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007BA4),
-                    disabledBackgroundColor: Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Text(
-                    "Transfer Money",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        color: Colors.white),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Purpose Field (Optional)
+                const Text(
+                  "Purpose (Optional)",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _purposeController,
+                  decoration: InputDecoration(
+                    hintText: 'E.g., Rent payment, Gift, etc.',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Transfer Button
+                Container(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                      if (_formKey.currentState!.validate()) {
+                        _showPinVerificationDialog();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007BA4),
+                      disabledBackgroundColor: Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : const Text(
+                      "Transfer Money",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
-
-class UserData {
-  final String name;
-  final String accountNumber;
-  final double balance;
-
-  UserData({
-    required this.name,
-    required this.accountNumber,
-    required this.balance,
-  });
 }

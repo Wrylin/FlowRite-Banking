@@ -4,6 +4,7 @@ import 'package:flowrite_banking/AuthService.dart';
 import 'package:flowrite_banking/pages/Userinfo.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flowrite_banking/pages/Analytics.dart';
 
 class UserProfile {
   final String name;
@@ -167,15 +168,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   Divider(color: Colors.grey[200]),
                   ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AnalyticsPage()),
+                      );
+                    },
                     leading: const CircleAvatar(
                       backgroundColor: Color.fromARGB(255, 239, 243, 245),
                       child: Icon(
-                        Icons.payment_outlined,
+                        Icons.analytics_outlined,
                         size: 22,
                         color: Color(0xFF007BA4),
                       ),
                     ),
-                    title: const Text("My Banking Details"),
+                    title: const Text("Financial Analytics"),
                     trailing: const Icon(Icons.arrow_forward_ios),
                   ),
                   Divider(color: Colors.grey[200]),
@@ -202,7 +209,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: ElevatedButton(
                 style: ButtonStyle(
                   backgroundColor:
-                  WidgetStateProperty.all<Color>(const Color(0xFF204887)),
+                  MaterialStateProperty.all<Color>(const Color(0xFF204887)),
                 ),
                 onPressed: () async {
                   await AuthService().signout();
