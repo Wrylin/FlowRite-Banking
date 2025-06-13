@@ -175,6 +175,36 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
+  Future<String> _generateAccountNumber() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Query the bank-account collection to find the highest account number
+    QuerySnapshot accountsSnapshot = await firestore
+        .collection('bank-account')
+        .orderBy('account-number', descending: true)
+        .limit(1)
+        .get();
+
+    int nextCounter = 1000; // Default starting value
+
+    if (accountsSnapshot.docs.isNotEmpty) {
+      // Extract the last 4 digits from the highest account number
+      String highestAccountNumber = accountsSnapshot.docs.first.get('account-number') as String;
+      String lastFourDigits = highestAccountNumber.split('-').last;
+
+      try {
+        // Parse the last 4 digits and increment by 1
+        nextCounter = int.parse(lastFourDigits) + 1;
+      } catch (e) {
+        // If parsing fails, use the default value
+        log('Error parsing account number: $e');
+      }
+    }
+
+    // Format account number as 1111-2222-3333-XXXX
+    return '1111-2222-3333-${nextCounter.toString().padLeft(4, '0')}';
+  }
+
   _savedUserData(String userid) async {
     FirebaseFirestore users = FirebaseFirestore.instance;
     FirebaseFirestore bankacc = FirebaseFirestore.instance;
@@ -194,13 +224,17 @@ class _SignupPageState extends State<SignupPage> {
         'email': emailController.text,
         'pass': passwordController.text,
       });
+
+      // Generate unique account number
+      String accountNumber = await _generateAccountNumber();
+
       await bankacc.collection('bank-account')
           .doc(userid)
           .set({
-        'account-number': '1111-2222-3333-4440',
+        'account-number': accountNumber,
         'balance': 1000,
       });
-      print('User added.');
+      print('User added with account number: $accountNumber');
     }
     else {
       //user already exists
@@ -229,15 +263,18 @@ class _SignupPageState extends State<SignupPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Generate unique account number
+      String accountNumber = await _generateAccountNumber();
+
       // Create bank account
       await userG.collection('bank-account')
           .doc(user.uid)
           .set({
-        'account-number': '1111-2222-3333-4440',
+        'account-number': accountNumber,
         'balance': 1000,
       });
 
-      log('Google user data saved.');
+      log('Google user data saved with account number: $accountNumber');
     } else {
       log('Google user already exists.');
     }
