@@ -394,6 +394,7 @@ class _UserPageState extends State<UserPage> {
                             },
                           ),
                           hintText: "Leave blank to keep current password",
+                          hintStyle: TextStyle(color: Colors.grey[500]),
                         ),
                       ),
                       const SizedBox(height: 10),

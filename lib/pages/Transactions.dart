@@ -397,6 +397,7 @@ class _TransactionPageState extends State<TransactionPage> {
                 decoration: InputDecoration(
                   prefixText: '₱ ',
                   hintText: '0.00',
+                  hintStyle: TextStyle(color: Colors.grey[500]),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Dashboard.dart';
 import 'package:flowrite_banking/pages/Signup.dart';
+import 'package:flowrite_banking/pages/CreatePin.dart';
 import 'package:flowrite_banking/AuthService.dart';
 import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -240,6 +242,58 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // New method to check if user has PIN and navigate accordingly
+  Future<void> _navigateAfterLogin(String userId) async {
+    try {
+      // Check if user has created a PIN
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('user-data')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+        if (userData.containsKey('pin') && userData['pin'] != null) {
+          // User has PIN, navigate to Dashboard
+          log("User has PIN, navigating to Dashboard");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
+        } else {
+          // User doesn't have PIN, navigate to CreatePinPage
+          log("User doesn't have PIN, navigating to CreatePinPage");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => CreatePinPage(userId: userId)),
+          );
+        }
+      } else {
+        // Something went wrong, navigate to Dashboard as fallback
+        log("User document not found or invalid, navigating to Dashboard as fallback");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      }
+    } catch (e) {
+      log("Error checking PIN status: $e");
+      // On error, navigate to Dashboard as fallback
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardPage()),
+      );
+    } finally {
+      // Ensure loading state is reset
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _loginFunc() async {
     // basic validation
     if (usernameOrEmailController.text.isEmpty || passwordController.text.isEmpty) {
@@ -262,10 +316,8 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user != null) {
         log("User Logged In Successfully");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
+        // Use the new navigation method instead of direct navigation
+        await _navigateAfterLogin(user.uid);
       } else {
         setState(() {
           errorMessage = "Invalid username/email or password";
@@ -291,10 +343,8 @@ class _LoginPageState extends State<LoginPage> {
       final user = await _auth.signInWithGoogle();
       if (user != null) {
         log("Signed in with Google successfully");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
+        // Use the new navigation method instead of direct navigation
+        await _navigateAfterLogin(user.uid);
       } else {
         setState(() {
           errorMessage = "Google sign-in failed";

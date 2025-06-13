@@ -2,7 +2,8 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flowrite_banking/pages/Login.dart';
 import 'package:flutter/material.dart';
-import 'package:flowrite_banking/pages/Dashboard.dart';
+// import 'package:flowrite_banking/pages/Dashboard.dart';
+import 'package:flowrite_banking/pages/CreatePin.dart';
 import 'package:flowrite_banking/AuthService.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -108,7 +109,13 @@ class _SignupPageState extends State<SignupPage> {
                       if (user != null) {
                         log("Signed in with Google successfully");
                         await _saveGoogleUserData(user);
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+                        // Navigate to PIN creation page instead of Dashboard
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => CreatePinPage(userId: user.uid)
+                            )
+                        );
                       }
                     },
                     color: Colors.white,
@@ -166,7 +173,13 @@ class _SignupPageState extends State<SignupPage> {
     if (user != null) {
       log("User Created Successfully");
       await _savedUserData(user.uid);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+      // Navigate to PIN creation page instead of Dashboard
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => CreatePinPage(userId: user.uid)
+          )
+      );
     }
     else {
       ScaffoldMessenger.of(context).showSnackBar(
