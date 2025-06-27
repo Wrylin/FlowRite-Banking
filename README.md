@@ -35,6 +35,11 @@ flutter run
 - cloud_firestore
 - google_sign_in
 - flutter
+- http
+- intl
+- fl_chart
+- flutter_native_splash
+- flutter_launcher_icons
 
 ### Notes
 > This project is a work-in-progress for my Software Development 2 class.
