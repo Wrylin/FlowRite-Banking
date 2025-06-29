@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "475518325058-2m1seqvullufmb3nm0f1cfs25p8p6db1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flowrite_banking",
+            "certificate_hash": "522a3bd1fd92b5731b79efa3506d9ab9a15870ae"
+          }
+        },
+        {
+          "client_id": "475518325058-2rm2aien1atk26uog289ksvkmj4n1819.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flowrite_banking",
+            "certificate_hash": "d3255bb769c8943158ca4561ee1ad6f8ecd21634"
+          }
+        },
+        {
           "client_id": "475518325058-nhmr2jsh12epeo8iu42miabcq6e793dc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
