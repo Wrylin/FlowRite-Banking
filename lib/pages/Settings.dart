@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flowrite_banking/pages/Welcome.dart';
 import 'package:flowrite_banking/AuthService.dart';
 import 'package:flowrite_banking/pages/Userinfo.dart';
+import 'package:flowrite_banking/pages/Security.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flowrite_banking/pages/Analytics.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class UserProfile {
   final String name;
   final String email;
   final String? photoURL;
+  final String? profileImageBase64; // Add this field
   final String username;
 
   UserProfile({
     required this.name,
     required this.email,
     this.photoURL,
+    this.profileImageBase64, // Add this parameter
     required this.username,
   });
 }
@@ -63,7 +68,8 @@ class _SettingsPageState extends State<SettingsPage> {
             userProfile = UserProfile(
               name: data['name'] ?? 'User',
               email: data['email'] ?? '',
-              photoURL: data['photoURL'],
+              photoURL: data['photoURL'], // Keep for Google users
+              profileImageBase64: data['profileImageBase64'], // Add this line
               username: data['username'] ?? '',
             );
             isLoading = false;
@@ -89,6 +95,54 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Widget _buildProfileAvatar() {
+    ImageProvider? imageProvider;
+
+    // First check for Base64 image (from manual upload)
+    if (userProfile?.profileImageBase64 != null && userProfile!.profileImageBase64!.isNotEmpty) {
+      try {
+        Uint8List imageBytes = base64Decode(userProfile!.profileImageBase64!);
+        imageProvider = MemoryImage(imageBytes);
+        print('Using Base64 profile image');
+      } catch (e) {
+        print('Error decoding Base64 image: $e');
+        imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
+      }
+    }
+    // Then check for URL image (from Google)
+    else if (userProfile?.photoURL != null && userProfile!.photoURL!.isNotEmpty) {
+      if (userProfile!.photoURL!.startsWith('http')) {
+        imageProvider = NetworkImage(userProfile!.photoURL!);
+        print('Using network profile image: ${userProfile!.photoURL}');
+      } else {
+        // Fallback: try to decode as Base64 if it's not a URL
+        try {
+          Uint8List imageBytes = base64Decode(userProfile!.photoURL!);
+          imageProvider = MemoryImage(imageBytes);
+          print('Using Base64 from photoURL field');
+        } catch (e) {
+          print('Error decoding photoURL as Base64: $e');
+          imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
+        }
+      }
+    }
+    // Default placeholder
+    else {
+      imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
+      print('Using placeholder image');
+    }
+
+    return CircleAvatar(
+      radius: 100,
+      backgroundImage: imageProvider,
+    );
+  }
+
+  bool _hasProfileImage() {
+    return (userProfile?.profileImageBase64 != null && userProfile!.profileImageBase64!.isNotEmpty) ||
+        (userProfile?.photoURL != null && userProfile!.photoURL!.isNotEmpty);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,11 +157,8 @@ class _SettingsPageState extends State<SettingsPage> {
             alignment: Alignment.topCenter,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 20, 0, 15),
-              child: userProfile?.photoURL != null && userProfile!.photoURL!.isNotEmpty
-                  ? CircleAvatar(
-                radius: 100,
-                backgroundImage: NetworkImage(userProfile!.photoURL!),
-              )
+              child: _hasProfileImage()
+                  ? _buildProfileAvatar()
                   : const CircleAvatar(
                 radius: 100,
                 backgroundImage: AssetImage('assets/images/profile_placeholder.jpg'),
@@ -187,16 +238,22 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   Divider(color: Colors.grey[200]),
                   ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SecurityPage()),
+                      );
+                    },
                     leading: const CircleAvatar(
                       backgroundColor: Color.fromARGB(255, 239, 243, 245),
                       child: Icon(
-                        Icons.question_answer,
+                        Icons.security,
                         size: 22,
                         color: Color(0xFF007BA4),
                       ),
                     ),
-                    title: const Text("FAQs"),
-                    trailing: const Icon(Icons.question_mark),
+                    title: const Text("Security"),
+                    trailing: const Icon(Icons.arrow_forward_ios),
                   ),
                 ],
               ),

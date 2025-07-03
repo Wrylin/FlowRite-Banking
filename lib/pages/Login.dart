@@ -21,10 +21,51 @@ class _LoginPageState extends State<LoginPage> {
   String? errorMessage;
   bool isPasswordVisible = false;
 
+  // PIN verification controllers
+  final List<TextEditingController> _pinControllers = List.generate(
+    4,
+        (index) => TextEditingController(),
+  );
+  final List<FocusNode> _pinFocusNodes = List.generate(
+    4,
+        (index) => FocusNode(),
+  );
+  final List<String> _previousPinTexts = List.generate(4, (index) => "");
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Set up listeners for PIN backspace detection
+    for (int i = 0; i < 4; i++) {
+      final index = i;
+      _pinControllers[index].addListener(() {
+        String currentText = _pinControllers[index].text;
+
+        if (currentText.isEmpty && _previousPinTexts[index].isNotEmpty && index > 0) {
+          _pinFocusNodes[index - 1].requestFocus();
+          _pinControllers[index - 1].selection = TextSelection.fromPosition(
+            TextPosition(offset: _pinControllers[index - 1].text.length),
+          );
+        }
+
+        _previousPinTexts[index] = currentText;
+      });
+    }
+  }
+
   @override
   void dispose() {
     usernameOrEmailController.dispose();
     passwordController.dispose();
+
+    for (var controller in _pinControllers) {
+      controller.dispose();
+    }
+    for (var node in _pinFocusNodes) {
+      node.dispose();
+    }
+
     super.dispose();
   }
 
@@ -242,7 +283,159 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // New method to check if user has PIN and navigate accordingly
+  // Show PIN verification dialog
+  void _showPinVerificationDialog(String userId) {
+    // Reset PIN controllers
+    for (var controller in _pinControllers) {
+      controller.clear();
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Enter PIN',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Please enter your 4-digit PIN to complete login',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(
+                  4,
+                      (index) => _buildPinField(index),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  isLoading = false;
+                });
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Combine PIN digits
+                String pin = _pinControllers.map((controller) => controller.text).join();
+
+                if (pin.length != 4) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter all 4 digits')),
+                  );
+                  return;
+                }
+
+                Navigator.of(context).pop();
+                _verifyPinAndLogin(userId, pin);
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPinField(int index) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.grey,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: _pinControllers[index],
+        focusNode: _pinFocusNodes[index],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        maxLength: 1,
+        obscureText: true,
+        decoration: const InputDecoration(
+          counterText: "",
+          border: InputBorder.none,
+        ),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && index < 3) {
+            _pinFocusNodes[index + 1].requestFocus();
+          }
+        },
+      ),
+    );
+  }
+
+  // Verify PIN and complete login
+  Future<void> _verifyPinAndLogin(String userId, String enteredPin) async {
+    try {
+      // Get user document to verify PIN
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('user-data')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String? storedPin = userData['pin'];
+
+        if (storedPin == null) {
+          // User doesn't have a PIN, navigate to CreatePinPage
+          log("User doesn't have PIN, navigating to CreatePinPage");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => CreatePinPage(userId: userId)),
+          );
+        } else if (storedPin == enteredPin) {
+          // PIN is correct, navigate to Dashboard
+          log("PIN verified successfully, navigating to Dashboard");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
+        } else {
+          // PIN is incorrect
+          setState(() {
+            errorMessage = "Incorrect PIN. Please try again.";
+            isLoading = false;
+          });
+        }
+      } else {
+        // User document not found
+        setState(() {
+          errorMessage = "User data not found. Please try again.";
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      log("Error verifying PIN: $e");
+      setState(() {
+        errorMessage = "Error verifying PIN: ${e.toString()}";
+        isLoading = false;
+      });
+    }
+  }
+
+  // Modified navigation method to show PIN dialog
   Future<void> _navigateAfterLogin(String userId) async {
     try {
       // Check if user has created a PIN
@@ -255,12 +448,9 @@ class _LoginPageState extends State<LoginPage> {
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
         if (userData.containsKey('pin') && userData['pin'] != null) {
-          // User has PIN, navigate to Dashboard
-          log("User has PIN, navigating to Dashboard");
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
-          );
+          // User has PIN, show PIN verification dialog
+          log("User has PIN, showing PIN verification dialog");
+          _showPinVerificationDialog(userId);
         } else {
           // User doesn't have PIN, navigate to CreatePinPage
           log("User doesn't have PIN, navigating to CreatePinPage");
@@ -270,27 +460,19 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        // Something went wrong, navigate to Dashboard as fallback
-        log("User document not found or invalid, navigating to Dashboard as fallback");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
-      }
-    } catch (e) {
-      log("Error checking PIN status: $e");
-      // On error, navigate to Dashboard as fallback
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-    } finally {
-      // Ensure loading state is reset
-      if (mounted) {
+        // Something went wrong, show error
+        log("User document not found or invalid");
         setState(() {
+          errorMessage = "User data not found. Please try again.";
           isLoading = false;
         });
       }
+    } catch (e) {
+      log("Error checking PIN status: $e");
+      setState(() {
+        errorMessage = "Error: ${e.toString()}";
+        isLoading = false;
+      });
     }
   }
 
@@ -316,7 +498,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user != null) {
         log("User Logged In Successfully");
-        // Use the new navigation method instead of direct navigation
+        // Use the modified navigation method that shows PIN dialog
         await _navigateAfterLogin(user.uid);
       } else {
         setState(() {
@@ -343,7 +525,7 @@ class _LoginPageState extends State<LoginPage> {
       final user = await _auth.signInWithGoogle();
       if (user != null) {
         log("Signed in with Google successfully");
-        // Use the new navigation method instead of direct navigation
+        // Use the modified navigation method that shows PIN dialog
         await _navigateAfterLogin(user.uid);
       } else {
         setState(() {
