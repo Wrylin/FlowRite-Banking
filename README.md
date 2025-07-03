@@ -40,6 +40,11 @@ flutter run
 - fl_chart
 - flutter_native_splash
 - flutter_launcher_icons
+- shared_preferences
+- image_picker
+- path_provider
+- image
+- image_cropper
 
 ### Notes
 > This project is a work-in-progress for my Software Development 2 class.
