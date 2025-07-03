@@ -25,6 +25,7 @@ class _UserPageState extends State<UserPage> {
   bool isSaving = false;
   String? errorMessage;
   String? profileImageBase64;
+  String? googlePhotoURL;
   File? _imageFile;
   bool _isGoogleUser = false;
   final ImagePicker _picker = ImagePicker();
@@ -69,6 +70,7 @@ class _UserPageState extends State<UserPage> {
 
           setState(() {
             profileImageBase64 = data['profileImageBase64'];
+            googlePhotoURL = data['photoURL']; // Load Google photo URL
             isLoading = false;
           });
         } else {
@@ -518,6 +520,8 @@ class _UserPageState extends State<UserPage> {
 
           if (newImageBase64 != null) {
             updateData['profileImageBase64'] = newImageBase64;
+            // Clear photoURL when user uploads custom image
+            updateData['photoURL'] = null;
           }
 
           await FirebaseFirestore.instance
@@ -640,6 +644,7 @@ class _UserPageState extends State<UserPage> {
         if (newImageBase64 != null) {
           setState(() {
             profileImageBase64 = newImageBase64;
+            googlePhotoURL = null; // Clear Google photo when custom image is uploaded
             _imageFile = null;
           });
 
@@ -662,18 +667,37 @@ class _UserPageState extends State<UserPage> {
   Widget _buildProfileImage() {
     ImageProvider? imageProvider;
 
+    // Priority: 1. New image file, 2. Base64 image, 3. Google photo URL, 4. Placeholder
     if (_imageFile != null) {
       imageProvider = FileImage(_imageFile!);
+      print('Using new image file');
     } else if (profileImageBase64 != null && profileImageBase64!.isNotEmpty) {
       try {
         Uint8List imageBytes = base64Decode(profileImageBase64!);
         imageProvider = MemoryImage(imageBytes);
+        print('Using Base64 profile image');
       } catch (e) {
         print('Error decoding Base64 image: $e');
         imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
       }
+    } else if (googlePhotoURL != null && googlePhotoURL!.isNotEmpty) {
+      if (googlePhotoURL!.startsWith('http')) {
+        imageProvider = NetworkImage(googlePhotoURL!);
+        print('Using Google profile image: $googlePhotoURL');
+      } else {
+        // Fallback: try to decode as Base64 if it's not a URL
+        try {
+          Uint8List imageBytes = base64Decode(googlePhotoURL!);
+          imageProvider = MemoryImage(imageBytes);
+          print('Using Base64 from photoURL field');
+        } catch (e) {
+          print('Error decoding photoURL as Base64: $e');
+          imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
+        }
+      }
     } else {
       imageProvider = const AssetImage('assets/images/profile_placeholder.jpg');
+      print('Using placeholder image');
     }
 
     return CircleAvatar(
@@ -746,12 +770,15 @@ class _UserPageState extends State<UserPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "Tap to crop and change profile picture",
-                    style: TextStyle(
+                  Text(
+                    _isGoogleUser
+                        ? "Tap to replace Google photo with custom image"
+                        : "Tap to crop and change profile picture",
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 14,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   if (_imageFile != null)
                     Padding(

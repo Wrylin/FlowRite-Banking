@@ -29,6 +29,8 @@ class _SecurityPageState extends State<SecurityPage> {
   bool _isConfirmPasswordVisible = false;
   bool _isUpdatingPassword = false;
   bool _isUpdatingPin = false;
+  bool _isGoogleUser = false;
+  bool _isLoading = true;
 
   // Expansion states
   bool _isPasswordSectionExpanded = false;
@@ -38,6 +40,30 @@ class _SecurityPageState extends State<SecurityPage> {
   void initState() {
     super.initState();
     _setupPinListeners();
+    _checkUserAuthProvider();
+  }
+
+  Future<void> _checkUserAuthProvider() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Check if user signed in with Google
+        final isGoogle = user.providerData.any((provider) => provider.providerId == 'google.com');
+        setState(() {
+          _isGoogleUser = isGoogle;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking user auth provider: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _setupPinListeners() {
@@ -373,8 +399,107 @@ class _SecurityPageState extends State<SecurityPage> {
     );
   }
 
+  Widget _buildGoogleUserInfoCard() {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  "Google Account",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "You're signed in with Google. Your password is managed by Google and cannot be changed here. To update your Google account password, please visit your Google Account settings.",
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                // You could open Google account settings URL here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please visit accounts.google.com to manage your Google account'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('Manage Google Account'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF007BA4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            "Security Settings",
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                size: 18,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -407,135 +532,142 @@ class _SecurityPageState extends State<SecurityPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Password Section Card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  dividerColor: Colors.transparent, // This removes the divider lines
+            // Show Google user info card instead of password section for Google users
+            if (_isGoogleUser) ...[
+              _buildGoogleUserInfoCard(),
+              const SizedBox(height: 20),
+            ],
+
+            // Password Section Card - Only show for non-Google users
+            if (!_isGoogleUser) ...[
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: ExpansionTile(
-                  initiallyExpanded: _isPasswordSectionExpanded,
-                  onExpansionChanged: (expanded) {
-                    setState(() {
-                      _isPasswordSectionExpanded = expanded;
-                    });
-                  },
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  childrenPadding: EdgeInsets.zero, // Remove default padding
-                  leading: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF007BA4).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.lock_outline,
-                      color: Color(0xFF007BA4),
-                      size: 24,
-                    ),
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Colors.transparent,
                   ),
-                  title: const Text(
-                    "Change Password",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                  child: ExpansionTile(
+                    initiallyExpanded: _isPasswordSectionExpanded,
+                    onExpansionChanged: (expanded) {
+                      setState(() {
+                        _isPasswordSectionExpanded = expanded;
+                      });
+                    },
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    childrenPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF007BA4).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline,
+                        color: Color(0xFF007BA4),
+                        size: 24,
+                      ),
                     ),
-                  ),
-                  subtitle: const Text(
-                    "Update your account password",
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
+                    title: const Text(
+                      "Change Password",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      child: Column(
-                        children: [
-                          _buildPasswordField(
-                            label: "Current Password",
-                            controller: _currentPasswordController,
-                            isVisible: _isCurrentPasswordVisible,
-                            onToggleVisibility: () {
-                              setState(() {
-                                _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
-                              });
-                            },
-                            hintText: "Enter current password",
-                          ),
-                          const SizedBox(height: 20),
-                          _buildPasswordField(
-                            label: "New Password",
-                            controller: _newPasswordController,
-                            isVisible: _isNewPasswordVisible,
-                            onToggleVisibility: () {
-                              setState(() {
-                                _isNewPasswordVisible = !_isNewPasswordVisible;
-                              });
-                            },
-                            hintText: "Enter new password",
-                          ),
-                          const SizedBox(height: 20),
-                          _buildPasswordField(
-                            label: "Confirm New Password",
-                            controller: _confirmPasswordController,
-                            isVisible: _isConfirmPasswordVisible,
-                            onToggleVisibility: () {
-                              setState(() {
-                                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                              });
-                            },
-                            hintText: "Confirm new password",
-                          ),
-                          const SizedBox(height: 30),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isUpdatingPassword ? null : _updatePassword,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF007BA4),
-                                disabledBackgroundColor: Colors.grey.shade300,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                    subtitle: const Text(
+                      "Update your account password",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Column(
+                          children: [
+                            _buildPasswordField(
+                              label: "Current Password",
+                              controller: _currentPasswordController,
+                              isVisible: _isCurrentPasswordVisible,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
+                                });
+                              },
+                              hintText: "Enter current password",
+                            ),
+                            const SizedBox(height: 20),
+                            _buildPasswordField(
+                              label: "New Password",
+                              controller: _newPasswordController,
+                              isVisible: _isNewPasswordVisible,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _isNewPasswordVisible = !_isNewPasswordVisible;
+                                });
+                              },
+                              hintText: "Enter new password",
+                            ),
+                            const SizedBox(height: 20),
+                            _buildPasswordField(
+                              label: "Confirm New Password",
+                              controller: _confirmPasswordController,
+                              isVisible: _isConfirmPasswordVisible,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                });
+                              },
+                              hintText: "Confirm new password",
+                            ),
+                            const SizedBox(height: 30),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: _isUpdatingPassword ? null : _updatePassword,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF007BA4),
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
                                 ),
-                                elevation: 0,
-                              ),
-                              child: _isUpdatingPassword
-                                  ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : const Text(
-                                "Update Password",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.white,
+                                child: _isUpdatingPassword
+                                    ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Text(
+                                  "Update Password",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
+            ],
 
-            const SizedBox(height: 20),
-
-            // PIN Section Card
+            // PIN Section Card - Available for all users
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -543,7 +675,7 @@ class _SecurityPageState extends State<SecurityPage> {
               ),
               child: Theme(
                 data: Theme.of(context).copyWith(
-                  dividerColor: Colors.transparent, // This removes the divider lines
+                  dividerColor: Colors.transparent,
                 ),
                 child: ExpansionTile(
                   initiallyExpanded: _isPinSectionExpanded,
@@ -553,7 +685,7 @@ class _SecurityPageState extends State<SecurityPage> {
                     });
                   },
                   tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  childrenPadding: EdgeInsets.zero, // Remove default padding
+                  childrenPadding: EdgeInsets.zero,
                   leading: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -715,10 +847,11 @@ class _SecurityPageState extends State<SecurityPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildSecurityTip("Use a strong password with at least 8 characters"),
+                    if (!_isGoogleUser) _buildSecurityTip("Use a strong password with at least 8 characters"),
                     _buildSecurityTip("Don't use the same PIN for multiple accounts"),
                     _buildSecurityTip("Change your credentials regularly"),
                     _buildSecurityTip("Never share your PIN with anyone"),
+                    if (_isGoogleUser) _buildSecurityTip("Your Google account provides additional security features"),
                   ],
                 ),
               ),
